@@ -1,0 +1,54 @@
+name: Deploy Multi-Site MkDocs to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main # Or 'master', depending on your default branch name
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.x # Use a specific Python version, e.g., 3.9, 3.10, 3.11
+
+      - name: Install MkDocs and Material for MkDocs (and other plugins)
+        run: |
+          pip install mkdocs mkdocs-material # Install MkDocs and any common theme/plugins
+          # If you have specific plugins for each site, you might install them here too,
+          # or ensure they are listed in a requirements.txt within each site folder and installed there.
+
+      - name: Build and Deploy Site 1
+        run: |
+          cd site1
+          mkdocs build --clean --site-dir ../_site/site1 # Build output to a temp directory
+        working-directory: site1 # Ensures commands run from site1 directory
+      - name: Deploy Site 1 to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site/site1 # Path to the built site
+          destination_dir: site1      # Destination subdirectory on the gh-pages branch
+          force_orphan: true          # Important: Ensures only this site's content is updated in its subdir
+          cname: '' # Leave empty unless you have a specific CNAME for this sub-site
+
+      - name: Build and Deploy Site 2
+        run: |
+          cd site2
+          mkdocs build --clean --site-dir ../_site/site2 # Build output to a temp directory
+        working-directory: site2 # Ensures commands run from site2 directory
+      - name: Deploy Site 2 to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site/site2 # Path to the built site
+          destination_dir: site2      # Destination subdirectory on the gh-pages branch
+          force_orphan: true          # Important: Ensures only this site's content is updated in its subdir
+          cname: '' # Leave empty unless you have a specific CNAME for this sub-site
+
+      # Add more steps for site3, site4, etc. following the same pattern
