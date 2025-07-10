@@ -1,54 +1,33 @@
-name: Deploy Multi-Site MkDocs to GitHub Pages
+name: Deploy MkDocs Sites
 
 on:
   push:
     branches:
-      - main # Or 'master', depending on your default branch name
+      - main # Or master
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.x # Use a specific Python version, e.g., 3.9, 3.10, 3.11
-
-      - name: Install MkDocs and Material for MkDocs (and other plugins)
+      # Deploy terraform_web (your existing site)
+      - name: Deploy terraform_web
         run: |
-          pip install mkdocs mkdocs-material # Install MkDocs and any common theme/plugins
-          # If you have specific plugins for each site, you might install them here too,
-          # or ensure they are listed in a requirements.txt within each site folder and installed there.
-
-      - name: Build and Deploy Site 1
+          pip install mkdocs mkdocs-material # Install mkdocs and theme
+          mkdocs build -f terraform_web/mkdocs.yml -d site/terraform_web # Build to a subdirectory
+      - name: Deploy Python Basics
         run: |
-          cd site1
-          mkdocs build --clean --site-dir ../_site/site1 # Build output to a temp directory
-        working-directory: site1 # Ensures commands run from site1 directory
-      - name: Deploy Site 1 to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
+          # Assuming mkdocs is already installed from the previous step or install again if needed for isolation
+          mkdocs build -f python_basics/mkdocs.yml -d site/python_basics # Build to another subdirectory
+
+      - name: Deploy Cloud Computing
+        run: |
+          mkdocs build -f cloud_computing/mkdocs.yml -d site/cloud_computing
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./_site/site1 # Path to the built site
-          destination_dir: site1      # Destination subdirectory on the gh-pages branch
-          force_orphan: true          # Important: Ensures only this site's content is updated in its subdir
-          cname: '' # Leave empty unless you have a specific CNAME for this sub-site
-
-      - name: Build and Deploy Site 2
-        run: |
-          cd site2
-          mkdocs build --clean --site-dir ../_site/site2 # Build output to a temp directory
-        working-directory: site2 # Ensures commands run from site2 directory
-      - name: Deploy Site 2 to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./_site/site2 # Path to the built site
-          destination_dir: site2      # Destination subdirectory on the gh-pages branch
-          force_orphan: true          # Important: Ensures only this site's content is updated in its subdir
-          cname: '' # Leave empty unless you have a specific CNAME for this sub-site
-
-      # Add more steps for site3, site4, etc. following the same pattern
+          publish_dir: ./site # Publish the entire 'site' directory which contains all your built sites
